@@ -8,13 +8,25 @@ from .components.message_block import MessageBlock
 from .magic_commands import handle_magic_command
 from ..utils.display_markdown_message import display_markdown_message
 from ..utils.truncate_output import truncate_output
+from ..utils.scan_code import scan_code
+
 
 def terminal_interface(interpreter, message):
     if not interpreter.auto_run:
-        display_markdown_message("""**Open Interpreter** will require approval before running code. Use `interpreter -y` to bypass this.
+        interpreter_intro_message = [
+            "**Open Interpreter** will require approval before running code."
+        ]
 
-        Press `CTRL-C` to exit.
-        """)
+        if interpreter.safe_mode != "off":
+            interpreter_intro_message.append(f"**Safe Mode**: {interpreter.safe_mode}")
+        else:
+            interpreter_intro_message.append(
+                "Use `interpreter -y` to bypass this."
+            )
+
+        interpreter_intro_message.append("Press `CTRL-C` to exit.")
+
+        display_markdown_message("\n\n".join(interpreter_intro_message) + "\n")
     
     active_block = None
 
@@ -44,7 +56,7 @@ def terminal_interface(interpreter, message):
         # We'll use this to determine if we should render a new code block,
         # In the event we get code -> output -> code again
         ran_code_block = False
-        render_cursor = False
+        render_cursor = True
             
         try:
             for chunk in interpreter.chat(message, display=False, stream=True):
@@ -59,6 +71,7 @@ def terminal_interface(interpreter, message):
                         active_block.end()
                         active_block = MessageBlock()
                     active_block.message += chunk["message"]
+                    render_cursor = True
 
                 # Code
                 if "code" in chunk or "language" in chunk:
@@ -86,6 +99,26 @@ def terminal_interface(interpreter, message):
 
                         # End the active block so you can run input() below it
                         active_block.end()
+
+                        should_scan_code = False
+
+                        if not interpreter.safe_mode == "off":
+                            if interpreter.safe_mode == "auto":
+                                should_scan_code = True
+                            elif interpreter.safe_mode == 'ask':
+                                response = input("  Would you like to scan this code? (y/n)\n\n  ")
+                                print("")  # <- Aesthetic choice
+
+                                if response.strip().lower() == "y":
+                                    should_scan_code = True
+
+                        if should_scan_code:
+                            # Get code language and actual code from the chunk
+                            # We need to give these to semgrep when we start our scan
+                            language = chunk["executing"]["language"]
+                            code = chunk["executing"]["code"]
+
+                            scan_code(code, language, interpreter)
 
                         response = input("  Would you like to run this code? (y/n)\n\n  ")
                         print("")  # <- Aesthetic choice
@@ -130,8 +163,13 @@ def terminal_interface(interpreter, message):
                 break
 
         except KeyboardInterrupt:
-            # Exit gracefully (this cancels LLM, returns to the interactive "> " input)
+            # Exit gracefully
             if active_block:
                 active_block.end()
                 active_block = None
-            continue
+                
+            if interactive:
+                # (this cancels LLM, returns to the interactive "> " input)
+                continue
+            else:
+                break
