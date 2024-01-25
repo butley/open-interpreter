@@ -1,49 +1,43 @@
 import json
 
+
+import json
+
+def create_message(role, content="", function_call=None):
+    message = {"role": role, "content": content}
+    if function_call:
+        message["function_call"] = function_call
+    return message
+
 def convert_to_openai_messages(messages, function_calling=True):
     new_messages = []
 
-    for message in messages:  
-        new_message = {
-            "role": message["role"],
-            "content": ""
-        }
+    for message in messages:
+        role = message.get("role", "user")
+        content = message.get("message", "")
+        code_block = message.get("code")
+        output = message.get("output")
 
-        if "message" in message:
-            new_message["content"] = message["message"]
-
-        if "code" in message:
+        if code_block:
             if function_calling:
-                new_message["function_call"] = {
-                    "name": "run_code",
-                    "arguments": json.dumps({
-                        "language": message["language"],
-                        "code": message["code"]
-                    }),
-                    # parsed_arguments isn't actually an OpenAI thing, it's an OI thing.
-                    # but it's soo useful! we use it to render messages to text_llms
-                    "parsed_arguments": {
-                        "language": message["language"],
-                        "code": message["code"]
-                    }
+                function_call = {
+                    "name": "execute",
+                    "arguments": json.dumps({"language": message["language"], "code": code_block}),
+                    "parsed_arguments": {"language": message["language"], "code": code_block},
                 }
+                new_messages.append(create_message(role, output, function_call))
             else:
-                new_message["content"] += f"""\n\n```{message["language"]}\n{message["code"]}\n```"""
-                new_message["content"] = new_message["content"].strip()
+                formatted_code = f"\n\n```{message['language']}\n{code_block}\n```"
+                new_messages.append(create_message(role, content + formatted_code))
 
-        new_messages.append(new_message)
-
-        if "output" in message:
+        elif output:
             if function_calling:
-                new_messages.append({
-                    "role": "function",
-                    "name": "run_code",
-                    "content": message["output"]
-                })
+                new_messages.append(create_message("function", output))
             else:
-                new_messages.append({
-                    "role": "user",
-                    "content": "CODE EXECUTED ON USERS MACHINE. OUTPUT (invisible to the user): " + message["output"]
-                })
+                output_message = "CODE EXECUTED ON USERS MACHINE. OUTPUT (invisible to the user): " + output
+                new_messages.append(create_message(role, output_message))
+
+        else:
+            new_messages.append(create_message(role, content))
 
     return new_messages

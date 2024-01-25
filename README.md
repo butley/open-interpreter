@@ -1,16 +1,8 @@
-<br>
-<p align="center">
-    <strong>The Open Interpreter Hackathon is today.</strong><br>
-    <br>
-    <a href="https://docs.openinterpreter.com/usage/python/streaming-response"><b>Docs</b></a> ‎ |‎ ‎ <a href="https://colab.research.google.com/drive/1WKmRXZgsErej2xUriKzxrEAXdxMSgWbb">Demo Colab</a> ‎ |‎ ‎ <a href="https://github.com/KillianLucas/open-interpreter-imessage-server">Morisy's Mac server</a><br><a href="https://github.com/Arrendy/open-interpreter-termux">Run on Android</a> ‎ |‎ ‎ <a href="https://colab.research.google.com/drive/1DUVYLAstnXs22Ov4YuHMngjvNB4Mfx0Y?usp=sharing">RAG Colab</a> ‎ |‎ ‎ <a href="https://colab.research.google.com/drive/1NojYGHDgxH6Y1G1oxThEBBb2AtyODBIK">Voice interface Colab</a>
-</p>
-<br>
 <h1 align="center">● Open Interpreter</h1>
 
 <p align="center">
     <a href="https://discord.gg/6p3fD6rBVm">
-        <img alt="Discord" src="https://img.shields.io/discord/1146610656779440188?logo=discord&style=flat&logoColor=white"/>
-    </a>
+        <img alt="Discord" src="https://img.shields.io/discord/1146610656779440188?logo=discord&style=flat&logoColor=white"/></a>
     <a href="README_JA.md"><img src="https://img.shields.io/badge/ドキュメント-日本語-white.svg" alt="JA doc"/></a>
     <a href="README_ZH.md"><img src="https://img.shields.io/badge/文档-中文版-white.svg" alt="ZH doc"/></a>
     <a href="README_IN.md"><img src="https://img.shields.io/badge/Hindi-white.svg" alt="IN doc"/></a>
@@ -31,6 +23,8 @@
 ```shell
 pip install open-interpreter
 ```
+
+**⚠️ Note: Open Interpreter currently supports Python 3.10 and 3.11.**
 
 ```shell
 interpreter
@@ -99,7 +93,7 @@ However, OpenAI's service is hosted, closed-source, and heavily restricted:
 
 ---
 
-Open Interpreter overcomes these limitations by running on your local environment. It has full access to the internet, isn't restricted by time or file size, and can utilize any package or library.
+Open Interpreter overcomes these limitations by running in your local environment. It has full access to the internet, isn't restricted by time or file size, and can utilize any package or library.
 
 This combines the power of GPT-4's Code Interpreter with the flexibility of your local development environment.
 
@@ -203,9 +197,9 @@ interpreter.model = "gpt-3.5-turbo"
 
 ### Running Open Interpreter locally
 
-ⓘ **Issues running locally?** Read our new [GPU setup guide](./docs/GPU.md) and [Windows setup guide](./docs/WINDOWS.md).
+ⓘ **Issues running locally?** Read our new [GPU setup guide](./docs/GPU.md), [Windows setup guide](./docs/WINDOWS.md) or [MacOS (Apple Silicon only) setup guide](./docs/MACOS.md).
 
-You can run `interpreter` in local mode from the command line to use `Code Llama`:
+You can run `interpreter` in local mode from the command line to use `Mistral 7B`:
 
 ```shell
 interpreter --local
@@ -221,7 +215,7 @@ interpreter --local --model tiiuae/falcon-180B
 
 You can easily modify the `max_tokens` and `context_window` (in tokens) of locally running models.
 
-Smaller context windows will use less RAM, so we recommend trying a shorter window if GPU is failing.
+Smaller context windows will use less RAM, so we recommend trying a shorter window if the GPU is failing.
 
 ```shell
 interpreter --max_tokens 2000 --context_window 16000
@@ -245,17 +239,16 @@ $ interpreter
 
 In the interactive mode, you can use the below commands to enhance your experience. Here's a list of available commands:
 
-**Available Commands:**  
- • `%debug [true/false]`: Toggle debug mode. Without arguments or with 'true', it
-enters debug mode. With 'false', it exits debug mode.
- • `%reset`: Resets the current session.
- • `%undo`: Remove previous messages and its response from the message history.
- • `%save_message [path]`: Saves messages to a specified JSON path. If no path is
-provided, it defaults to 'messages.json'.
- • `%load_message [path]`: Loads messages from a specified JSON path. If no path  
- is provided, it defaults to 'messages.json'.
- • `%tokens [prompt]`: Calculate the tokens used by the current conversation's messages and estimate their cost, and optionally calculate the tokens and estimated cost of a `prompt` if one is provided. Relies on [LiteLLM's `cost_per_token()` method](https://docs.litellm.ai/docs/completion/token_usage#2-cost_per_token) for estimated cost.
- • `%help`: Show the help message.
+**Available Commands:**
+
+- `%debug [true/false]`: Toggle debug mode. Without arguments or with `true` it
+enters debug mode. With `false` it exits debug mode.
+- `%reset`: Resets the current session's conversation.
+- `%undo`: Removes the previous user message and the AI's response from the message history.
+- `%save_message [path]`: Saves messages to a specified JSON path. If no path is provided, it defaults to `messages.json`.
+- `%load_message [path]`: Loads messages from a specified JSON path. If no path is provided, it defaults to `messages.json`.
+- `%tokens [prompt]`: (_Experimental_) Calculate the tokens that will be sent with the next prompt as context and estimate their cost. Optionally calculate the tokens and estimated cost of a `prompt` if one is provided. Relies on [LiteLLM's `cost_per_token()` method](https://docs.litellm.ai/docs/completion/token_usage#2-cost_per_token) for estimated costs.
+- `%help`: Show the help message.
 
 ### Configuration
 
@@ -320,6 +313,36 @@ for chunk in interpreter.chat(message, display=False, stream=True):
   print(chunk)
 ```
 
+## Sample FastAPI Server
+
+The generator update enables Open Interpreter to be controlled via HTTP REST endpoints:
+
+```python
+# server.py
+
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import interpreter
+
+app = FastAPI()
+
+@app.get("/chat")
+def chat_endpoint(message: str):
+    def event_stream():
+        for result in interpreter.chat(message, stream=True):
+            yield f"data: {result}\n\n"
+            
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+@app.get("/history")
+def history_endpoint():
+    return interpreter.messages
+```
+```shell
+pip install fastapi uvicorn
+uvicorn server:app --reload
+```
+
 ## Safety Notice
 
 Since generated code is executed in your local environment, it can interact with your files and system settings, potentially leading to unexpected outcomes like data loss or security risks.
@@ -330,7 +353,9 @@ You can run `interpreter -y` or set `interpreter.auto_run = True` to bypass this
 
 - Be cautious when requesting commands that modify files or system settings.
 - Watch Open Interpreter like a self-driving car, and be prepared to end the process by closing your terminal.
-- Consider running Open Interpreter in a restricted environment like Google Colab or Replit. These environments are more isolated, reducing the risks associated with executing arbitrary code.
+- Consider running Open Interpreter in a restricted environment like Google Colab or Replit. These environments are more isolated, reducing the risks of executing arbitrary code.
+
+There is **experimental** support for a [safe mode](./docs/SAFE_MODE.md) to help mitigate some risks.
 
 ## How Does it Work?
 
@@ -346,7 +371,7 @@ Please see our [Contributing Guidelines](./CONTRIBUTING.md) for more details on 
 
 ## License
 
-Open Interpreter is licensed under the MIT License. You are permitted to use, copy, modify, distribute, sublicense and sell copies of the software.
+Open Interpreter is licensed under the MIT License. You are permitted to use, copy, modify, distribute, sublicense, and sell copies of the software.
 
 **Note**: This software is not affiliated with OpenAI.
 
