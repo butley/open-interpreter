@@ -9,12 +9,18 @@ import subprocess
 
 import inquirer
 
-from ..utils.display_markdown_message import display_markdown_message
-from ..utils.local_storage_path import get_storage_path
 from .render_past_conversation import render_past_conversation
+from .utils.display_markdown_message import display_markdown_message
+from .utils.local_storage_path import get_storage_path
 
 
 def conversation_navigator(interpreter):
+    print(
+        "This feature is not working as of 0.2.0 (The New Computer Update). Please consider submitting a PR to repair it with the new streaming format."
+    )
+    import time
+
+    time.sleep(5)
     conversations_dir = get_storage_path("conversations")
 
     display_markdown_message(
@@ -29,8 +35,12 @@ def conversation_navigator(interpreter):
         print(f"No conversations found in {conversations_dir}")
         return None
 
-    # Get list of all JSON files in the directory
-    json_files = [f for f in os.listdir(conversations_dir) if f.endswith(".json")]
+    # Get list of all JSON files in the directory and sort them by modification time, newest first
+    json_files = sorted(
+        [f for f in os.listdir(conversations_dir) if f.endswith(".json")],
+        key=lambda x: os.path.getmtime(os.path.join(conversations_dir, x)),
+        reverse=True,
+    )
 
     # Make a dict that maps reformatted "First few words... (September 23rd)" -> "First_few_words__September_23rd.json" (original file name)
     readable_names_and_filenames = {}
