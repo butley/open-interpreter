@@ -3,10 +3,12 @@
 <p align="center">
     <a href="https://discord.gg/6p3fD6rBVm">
         <img alt="Discord" src="https://img.shields.io/discord/1146610656779440188?logo=discord&style=flat&logoColor=white"/></a>
+    <a href="README_ES.md"> <img src="https://img.shields.io/badge/Español-white.svg" alt="ES doc"/></a>
     <a href="docs/README_JA.md"><img src="https://img.shields.io/badge/ドキュメント-日本語-white.svg" alt="JA doc"/></a>
     <a href="docs/README_ZH.md"><img src="https://img.shields.io/badge/文档-中文版-white.svg" alt="ZH doc"/></a>
+    <a href="README_UK.md"><img src="https://img.shields.io/badge/Українська-white.svg" alt="UK doc"/></a>
     <a href="docs/README_IN.md"><img src="https://img.shields.io/badge/Hindi-white.svg" alt="IN doc"/></a>
-    <img src="https://img.shields.io/static/v1?label=license&message=MIT&color=white&style=flat" alt="License"/>
+    <a href="../LICENSE"><img src="https://img.shields.io/static/v1?label=license&message=AGPL&color=white&style=flat" alt="License"/></a>
     <br>
     <br>
     <b>chạy mô hình ngôn ngữ trí tuệ nhân tạo trên máy tính của bạn.</b><br>
@@ -16,7 +18,7 @@
 
 <br>
 
-![poster](https://github.com/KillianLucas/open-interpreter/assets/63927363/08f0d493-956b-4d49-982e-67d4b20c4b56)
+![poster](https://github.com/OpenInterpreter/open-interpreter/assets/63927363/08f0d493-956b-4d49-982e-67d4b20c4b56)
 
 <br>
 
@@ -45,7 +47,7 @@ Các tính năng chung giao diện ngôn ngữ mang llại
 
 ## Thử nghiệm
 
-https://github.com/KillianLucas/open-interpreter/assets/63927363/37152071-680d-4423-9af3-64836a6f7b60
+https://github.com/OpenInterpreter/open-interpreter/assets/63927363/37152071-680d-4423-9af3-64836a6f7b60
 
 #### Bản thử nghiệm có sẵn trên Google Colab:
 
@@ -195,15 +197,23 @@ interpreter.llm.model = "gpt-3.5-turbo"
 
 ### Chạy Open Interpreter trên máy cục bộ
 
-Open Interpreter sử dụng [LM Studio](https://lmstudio.ai/) để kết nối tới các mô hình cục bộ (thử nghiệm).
+Open Interpreter có thể sử dụng máy chủ tương thích với OpenAI để chạy các mô hình cục bộ. (LM Studio, jan.ai, ollama, v.v.)
 
-Cơ bản chạy `interpreter` trong chế độ cục bộ từ command line:
+Chỉ cần chạy `interpreter` với URL api_base của máy chủ suy luận của bạn (đối với LM studio, nó là `http://localhost:1234/v1` theo mặc định):
 
-```shell
-interpreter --local
+```vỏ
+trình thông dịch --api_base "http://localhost:1234/v1" --api_key "fake_key"
 ```
 
-**Bạn sẽ cần chạy LM Studio trong nền.**
+Ngoài ra, bạn có thể sử dụng Llamafile mà không cần cài đặt bất kỳ phần mềm bên thứ ba nào chỉ bằng cách chạy
+
+```vỏ
+thông dịch viên --local
+```
+
+để biết hướng dẫn chi tiết hơn, hãy xem [video này của Mike Bird](https://www.youtube.com/watch?v=CEs51hGWuGU?si=cN7f6QhfT4edfG5H)
+
+**Để chạy LM Studio ở chế độ nền.**
 
 1. Tải [https://lmstudio.ai/](https://lmstudio.ai/) và khởi động.
 2. Chọn một mô hình rồi nhấn **↓ Download**.
@@ -211,8 +221,6 @@ interpreter --local
 4. Chọn mô hình của bạn ở phía trên, rồi nhấn chạy **Start Server**.
 
 Một khi server chạy, bạn có thể bắt đầu trò chuyện với Open Interpreter.
-
-(Khi bạn chạy lệnh `interpreter --local`, các bước ở dưới sẽ được hiện ra.)
 
 > **Lưu ý:** Chế độ cục bộ chỉnh `context_window` của bạn tới 3000, và `max_tokens` của bạn tới 600. Nếu mô hình của bạn có các yêu cầu khác, thì hãy chỉnh các tham số thủ công (xem bên dưới).
 

@@ -4,15 +4,17 @@ from interpreter import interpreter
 
 interpreter.os = True
 interpreter.llm.supports_vision = True
-# interpreter.shrink_images = True # Faster but less accurate
 
-interpreter.llm.model = "gpt-4-vision-preview"
+interpreter.llm.model = "gpt-4o"
 
-interpreter.llm.supports_functions = False
+interpreter.computer.import_computer_api = True
+
+interpreter.llm.supports_functions = True
 interpreter.llm.context_window = 110000
 interpreter.llm.max_tokens = 4096
 interpreter.auto_run = True
-interpreter.force_task_completion = True
+interpreter.loop = True
+interpreter.sync_computer = True
 
 interpreter.system_message = r"""
 
@@ -33,23 +35,47 @@ Do not try to write code that attempts the entire task at once, and verify at ea
 You may use the `computer` Python module to complete tasks:
 
 ```python
-computer.browser.search(query)
+computer.browser.search(query) # Silently searches Google for the query, returns result. The user's browser is unaffected. (does not open a browser!)
+# Note: There are NO other browser functions — use regular `webbrowser` and `computer.display.view()` commands to view/control a real browser.
 
-computer.display.view() # Shows you what's on the screen, returns a `pil_image` `in case you need it (rarely). **You almost always want to do this first!**
+computer.display.view() # Shows you what's on the screen (primary display by default), returns a `pil_image` `in case you need it (rarely). To get a specific display, use the parameter screen=DISPLAY_NUMBER (0 for primary monitor 1 and above for secondary monitors). **You almost always want to do this first!**
+# NOTE: YOU MUST NEVER RUN image.show() AFTER computer.display.view. IT WILL AUTOMATICALLY SHOW YOU THE IMAGE. DO NOT RUN image.show().
 
 computer.keyboard.hotkey(" ", "command") # Opens spotlight (very useful)
 computer.keyboard.write("hello")
 
+# Use this to click text:
 computer.mouse.click("text onscreen") # This clicks on the UI element with that text. Use this **frequently** and get creative! To click a video, you could pass the *timestamp* (which is usually written on the thumbnail) into this.
+# Use this to click an icon, button, or other symbol:
+computer.mouse.click(icon="gear icon") # Clicks the icon with that description. Use this very often.
+
 computer.mouse.move("open recent >") # This moves the mouse over the UI element with that text. Many dropdowns will disappear if you click them. You have to hover over items to reveal more.
 computer.mouse.click(x=500, y=500) # Use this very, very rarely. It's highly inaccurate
-computer.mouse.click(icon="gear icon") # Moves mouse to the icon with that description. Use this very often
 
 computer.mouse.scroll(-10) # Scrolls down. If you don't find some text on screen that you expected to be there, you probably want to do this
 x, y = computer.display.center() # Get your bearings
 
 computer.clipboard.view() # Returns contents of clipboard
 computer.os.get_selected_text() # Use frequently. If editing text, the user often wants this
+
+{{
+import platform
+if platform.system() == 'Darwin':
+        print('''
+computer.browser.search(query) # Google search results will be returned from this function as a string
+computer.files.edit(path_to_file, original_text, replacement_text) # Edit a file
+computer.calendar.create_event(title="Meeting", start_date=datetime.datetime.now(), end_date=datetime.datetime.now() + datetime.timedelta(hours=1), notes="Note", location="") # Creates a calendar event
+computer.calendar.get_events(start_date=datetime.date.today(), end_date=None) # Get events between dates. If end_date is None, only gets events for start_date
+computer.calendar.delete_event(event_title="Meeting", start_date=datetime.datetime) # Delete a specific event with a matching title and start date, you may need to get use get_events() to find the specific event object first
+computer.contacts.get_phone_number("John Doe")
+computer.contacts.get_email_address("John Doe")
+computer.mail.send("john@email.com", "Meeting Reminder", "Reminder that our meeting is at 3pm today.", ["path/to/attachment.pdf", "path/to/attachment2.pdf"]) # Send an email with a optional attachments
+computer.mail.get(4, unread=True) # Returns the {number} of unread emails, or all emails if False is passed
+computer.mail.unread_count() # Returns the number of unread emails
+computer.sms.send("555-123-4567", "Hello from the computer!") # Send a text message. MUST be a phone number, so use computer.contacts.get_phone_number frequently here
+''')
+}}
+
 ```
 
 For rare and complex mouse actions, consider using computer vision libraries on the `computer.display.view()` `pil_image` to produce a list of coordinates for the mouse to move/drag to.
@@ -122,13 +148,6 @@ except:
 
 """.strip()
 
-if interpreter.offline:
-    # Icon finding does not work offline
-    interpreter.system_message = interpreter.system_message.replace(
-        'computer.mouse.click(icon="gear icon") # Moves mouse to the icon with that description. Use this very often\n',
-        "",
-    )
-
 # Check if required packages are installed
 
 # THERE IS AN INCONSISTENCY HERE.
@@ -152,35 +171,44 @@ if missing_packages:
         time.sleep(2)
         print("Attempting to start OS control anyway...\n\n")
 
-    for pip_name in ["pip", "pip3"]:
-        command = f"{pip_name} install 'open-interpreter[os]'"
+    else:
+        for pip_combo in [
+            ["pip", "quotes"],
+            ["pip", "no-quotes"],
+            ["pip3", "quotes"],
+            ["pip", "no-quotes"],
+        ]:
+            if pip_combo[1] == "quotes":
+                command = f'{pip_combo[0]} install "open-interpreter[os]"'
+            else:
+                command = f"{pip_combo[0]} install open-interpreter[os]"
 
-        interpreter.computer.run("shell", command, display=True)
+            interpreter.computer.run("shell", command, display=True)
 
-        got_em = True
-        for package in missing_packages:
+            got_em = True
+            for package in missing_packages:
+                try:
+                    __import__(package)
+                except ImportError:
+                    got_em = False
+            if got_em:
+                break
+
+        missing_packages = []
+        for package in packages:
             try:
                 __import__(package)
             except ImportError:
-                got_em = False
-        if got_em:
-            break
+                missing_packages.append(package)
 
-    missing_packages = []
-    for package in packages:
-        try:
-            __import__(package)
-        except ImportError:
-            missing_packages.append(package)
-
-    if missing_packages != []:
-        print(
-            "\n\nWarning: The following packages could not be installed:",
-            ", ".join(missing_packages),
-        )
-        print("\nPlease try to install them manually.\n\n")
-        time.sleep(2)
-        print("Attempting to start OS control anyway...\n\n")
+        if missing_packages != []:
+            print(
+                "\n\nWarning: The following packages could not be installed:",
+                ", ".join(missing_packages),
+            )
+            print("\nPlease try to install them manually.\n\n")
+            time.sleep(2)
+            print("Attempting to start OS control anyway...\n\n")
 
 interpreter.display_message("> `OS Control` enabled")
 
@@ -200,11 +228,6 @@ interpreter.display_message("> `OS Control` enabled")
 # print(">\n\n")
 # console.print(Panel("[bold italic white on black]OS CONTROL[/bold italic white on black] Enabled", box=box.SQUARE, expand=False), style="white on black")
 
-if not interpreter.offline and not interpreter.auto_run:
-    api_message = "To find items on the screen, Open Interpreter has been instructed to send screenshots to [api.openinterpreter.com](https://api.openinterpreter.com/) (we do not store them). Add `--offline` to attempt this locally."
-    interpreter.display_message(api_message)
-    print("")
-
 if not interpreter.auto_run:
     screen_recording_message = "**Make sure that screen recording permissions are enabled for your Terminal or Python environment.**"
     interpreter.display_message(screen_recording_message)
@@ -214,20 +237,14 @@ if not interpreter.auto_run:
 # # Install Open Interpreter from GitHub
 # for chunk in interpreter.computer.run(
 #     "shell",
-#     "pip install git+https://github.com/KillianLucas/open-interpreter.git",
+#     "pip install git+https://github.com/OpenInterpreter/open-interpreter.git",
 # ):
 #     if chunk.get("format") != "active_line":
 #         print(chunk.get("content"))
 
-# Give it access to the computer via Python
-interpreter.computer.run(
-    language="python",
-    code="import time\nfrom interpreter import interpreter\ncomputer = interpreter.computer",  # We ask it to use time, so
-    display=interpreter.verbose,
-)
+interpreter.auto_run = True
 
-if not interpreter.auto_run:
-    interpreter.display_message(
-        "**Warning:** In this mode, Open Interpreter will not require approval before performing actions. Be ready to close your terminal."
-    )
-    print("")  # < - Aesthetic choice
+interpreter.display_message(
+    "**Warning:** In this mode, Open Interpreter will not require approval before performing actions. Be ready to close your terminal."
+)
+print("")  # < - Aesthetic choice

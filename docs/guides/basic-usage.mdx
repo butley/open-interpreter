@@ -2,7 +2,6 @@
 title: Basic Usage
 ---
 
-
 <CardGroup>
 
 <Card
@@ -29,17 +28,19 @@ title: Basic Usage
 
 ### Interactive Chat
 
-To start an interactive chat in your terminal, either run `interpreter` from the command line:
+To start an interactive chat in your terminal, either run `interpreter` from the command line or `interpreter.chat()` from a .py file.
 
-```shell
+<CodeGroup>
+
+```shell Terminal
 interpreter
 ```
 
-Or `interpreter.chat()` from a .py file:
-
-```python
+```python Python
 interpreter.chat()
 ```
+
+</CodeGroup>
 
 ---
 
@@ -61,17 +62,21 @@ interpreter.chat("These look great but can you make the subtitles bigger?")
 
 ### Start a New Chat
 
-In your terminal, Open Interpreter behaves like ChatGPT and will not remember previous conversations. Simply run `interpreter` to start a new chat:
+In your terminal, Open Interpreter behaves like ChatGPT and will not remember previous conversations. Simply run `interpreter` to start a new chat.
 
-```shell
+In Python, Open Interpreter remembers conversation history. If you want to start fresh, you can reset it.
+
+<CodeGroup>
+
+```shell Terminal
 interpreter
 ```
 
-In Python, Open Interpreter remembers conversation history. If you want to start fresh, you can reset it:
-
-```python
+```python Python
 interpreter.messages = []
 ```
+
+</CodeGroup>
 
 ---
 
@@ -81,13 +86,15 @@ In your terminal, Open Interpreter will save previous conversations to `<your ap
 
 You can resume any of them by running `--conversations`. Use your arrow keys to select one , then press `ENTER` to resume it.
 
-```shell
+In Python, `interpreter.chat()` returns a List of messages, which can be used to resume a conversation with `interpreter.messages = messages`.
+
+<CodeGroup>
+
+```shell Terminal
 interpreter --conversations
 ```
 
-In Python, `interpreter.chat()` returns a List of messages, which can be used to resume a conversation with `interpreter.messages = messages`:
-
-```python
+```python Python
 # Save messages to 'messages'
 messages = interpreter.chat("My name is Killian.")
 
@@ -98,19 +105,25 @@ interpreter.messages = []
 interpreter.messages = messages
 ```
 
+</CodeGroup>
+
 ---
 
 ### Configure Default Settings
 
-We save default settings to a configuration file which can be edited by running the following command:
+We save default settings to the `default.yaml` profile which can be opened and edited by running the following command:
 
 ```shell
-interpreter --config
+interpreter --profiles
 ```
 
 You can use this to set your default language model, system message (custom instructions), max budget, etc.
 
-<Info>**Note:** The Python library will also inherit settings from this config file, but you can only change it by running `interpreter --config` or navigating to `<your application directory>/Open Interpreter/config.yaml` and editing it manually.</Info>
+<Info>
+  **Note:** The Python library will also inherit settings from the default
+  profile file. You can change it by running `interpreter --profiles` and
+  editing `default.yaml`.
+</Info>
 
 ---
 

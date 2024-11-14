@@ -1,58 +1,29 @@
-import os
-import platform
-import subprocess
-import time
-
 from interpreter import interpreter
 
-if platform.system() == "Darwin":  # Check if the system is MacOS
-    result = subprocess.run(
-        ["xcode-select", "-p"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
-    if result.returncode != 0:
-        interpreter.display_message(
-            "To use the new, fully-managed `interpreter --local` (powered by Llamafile) Open Interpreter requires Mac users to have Xcode installed. You can install Xcode from https://developer.apple.com/xcode/ .\n\nAlternatively, you can use `LM Studio`, `Jan.ai`, or `Ollama` to manage local language models. Learn more at https://docs.openinterpreter.com/guides/running-locally ."
-        )
-        time.sleep(7)
-        raise Exception("Xcode is not installed. Please install Xcode and try again.")
+# Local setup
+interpreter.local_setup()
 
-# Define the path to the models directory
-models_dir = os.path.join(interpreter.get_oi_dir(), "models")
+interpreter.system_message = """You are an AI assistant that writes markdown code snippets to answer the user's request. You speak very concisely and quickly, you say nothing irrelevant to the user's request. For example:
 
-# Check and create the models directory if it doesn't exist
-if not os.path.exists(models_dir):
-    os.makedirs(models_dir)
+User: Open the chrome app.
+Assistant: On it.
+```python
+import webbrowser
+webbrowser.open('https://chrome.google.com')
+```
+User: The code you ran produced no output. Was this expected, or are we finished?
+Assistant: No further action is required; the provided snippet opens Chrome.
 
-# Define the path to the new llamafile
-llamafile_path = os.path.join(models_dir, "phi-2.Q4_K_M.llamafile")
+Now, your turn:""".strip()
 
-# Check if the new llamafile exists, if not download it
-if not os.path.exists(llamafile_path):
-    interpreter.display_message(
-        "Open Interpreter will attempt to download and run the `Phi-2` language model. This should take ~10 minutes."
-    )
-    time.sleep(7)
-    subprocess.run(
-        [
-            "wget",
-            "-O",
-            llamafile_path,
-            "https://huggingface.co/jartine/phi-2-llamafile/resolve/main/phi-2.Q4_K_M.llamafile",
-        ],
-        check=True,
-    )
+# Message templates
+interpreter.code_output_template = '''I executed that code. This was the output: """{content}"""\n\nWhat does this output mean (I can't understand it, please help) / what code needs to be run next (if anything, or are we done)? I can't replace any placeholders.'''
+interpreter.empty_code_output_template = "The code above was executed on my machine. It produced no text output. What's next (if anything, or are we done?)"
+interpreter.code_output_sender = "user"
 
-# Make the new llamafile executable
-subprocess.run(["chmod", "+x", llamafile_path], check=True)
+# Computer settings
+interpreter.computer.import_computer_api = False
 
-# Run the new llamafile in the background
-subprocess.Popen([llamafile_path])
-
-interpreter.system_message = "You are Open Interpreter, a world-class programmer that can execute code on the user's machine."
+# Misc settings
+interpreter.auto_run = False
 interpreter.offline = True
-
-interpreter.llm.model = "local"
-interpreter.llm.temperature = 0
-interpreter.llm.api_base = "https://localhost:8080/v1"
-interpreter.llm.max_tokens = 1000
-interpreter.llm.context_window = 3000

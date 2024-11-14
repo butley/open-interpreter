@@ -4,11 +4,7 @@ title: All Settings
 
 <CardGroup cols={3}>
 
-<Card
-  title="Language Model Settings"
-  icon="microchip"
-  href="#language-model"
->
+<Card title="Language Model Settings" icon="microchip" href="#language-model">
   Set your `model`, `api_key`, `temperature`, etc.
 </Card>
 
@@ -48,7 +44,8 @@ interpreter.llm.model = "gpt-3.5-turbo"
 ```
 
 ```yaml Profile
-model: gpt-3.5-turbo
+llm:
+  model: gpt-3.5-turbo
 ```
 
 </CodeGroup>
@@ -68,7 +65,8 @@ interpreter.llm.temperature = 0.7
 ```
 
 ```yaml Profile
-temperature: 0.7
+llm:
+  temperature: 0.7
 ```
 
 </CodeGroup>
@@ -88,7 +86,8 @@ interpreter.llm.context_window = 16000
 ```
 
 ```yaml Profile
-context_window: 16000
+llm:
+  context_window: 16000
 ```
 
 </CodeGroup>
@@ -108,7 +107,8 @@ interpreter.llm.max_tokens = 100
 ```
 
 ```yaml Profile
-max_tokens: 100
+llm:
+  max_tokens: 100
 ```
 
 </CodeGroup>
@@ -128,7 +128,8 @@ interpreter.llm.max_output = 1000
 ```
 
 ```yaml Profile
-max_output: 1000
+llm:
+  max_output: 1000
 ```
 
 </CodeGroup>
@@ -148,7 +149,8 @@ interpreter.llm.api_base = "https://api.example.com"
 ```
 
 ```yaml Profile
-api_base: https://api.example.com
+llm:
+  api_base: https://api.example.com
 ```
 
 </CodeGroup>
@@ -168,7 +170,8 @@ interpreter.llm.api_key = "your_api_key_here"
 ```
 
 ```yaml Profile
-api_key: your_api_key_here
+llm:
+  api_key: your_api_key_here
 ```
 
 </CodeGroup>
@@ -188,7 +191,8 @@ interpreter.llm.api_version = '2.0.2'
 ```
 
 ```yaml Profile
-api_version: 2.0.2
+llm:
+  api_version: 2.0.2
 ```
 
 </CodeGroup>
@@ -204,11 +208,12 @@ interpreter --llm_supports_functions
 ```
 
 ```python Python
-interpreter.llm.llm_supports_functions = True
+interpreter.llm.supports_functions = True
 ```
 
 ```yaml Profile
-llm_supports_functions: true
+llm:
+  supports_functions: true
 ```
 
 </CodeGroup>
@@ -224,12 +229,29 @@ interpreter --no-llm_supports_functions
 ```
 
 ```python Python
-interpreter.llm.llm_supports_functions = False
+interpreter.llm.supports_functions = False
 ```
 
 ```yaml Profile
-llm_supports_functions: false
+llm:
+  supports_functions: false
 ```
+
+</CodeGroup>
+
+### Execution Instructions
+
+If `llm.supports_functions` is `False`, this value will be added to the system message. This parameter tells language models how to execute code. This can be set to an empty string or to `False` if you don't want to tell the LLM how to do this.
+
+<CodeGroup>
+
+````python Python
+interpreter.llm.execution_instructions = "To execute code on the user's machine, write a markdown code block. Specify the language after the ```. You will receive the output. Use any programming language."
+````
+
+````python Profile
+interpreter.llm.execution_instructions = "To execute code on the user's machine, write a markdown code block. Specify the language after the ```. You will receive the output. Use any programming language."
+````
 
 </CodeGroup>
 
@@ -244,11 +266,12 @@ interpreter --llm_supports_vision
 ```
 
 ```python Python
-interpreter.llm.llm_supports_vision = True
+interpreter.llm.supports_vision = True
 ```
 
 ```yaml Profile
-llm_supports_vision: true
+llm:
+  supports_vision: true
 ```
 
 </CodeGroup>
@@ -257,7 +280,7 @@ llm_supports_vision: true
 
 ### Vision Mode
 
-Enables vision mode, which adds some special instructions to the prompt and switches to `gpt-4-vision-preview`.
+Enables vision mode, which adds some special instructions to the prompt and switches to `gpt-4o`.
 
 <CodeGroup>
 ```bash Terminal
@@ -265,13 +288,31 @@ interpreter --vision
 ```
 
 ```python Python
-interpreter.vision = True
-interpreter.llm.model = "gpt-4-vision-preview" # Any vision supporting model
+interpreter.llm.model = "gpt-4o" # Any vision supporting model
+interpreter.llm.supports_vision = True
+interpreter.llm.supports_functions = True
+
+interpreter.custom_instructions = """The user will show you an image of the code you write. You can view images directly.
+For HTML: This will be run STATELESSLY. You may NEVER write '<!-- previous code here... --!>' or `<!-- header will go here -->` or anything like that. It is CRITICAL TO NEVER WRITE PLACEHOLDERS. Placeholders will BREAK it. You must write the FULL HTML CODE EVERY TIME. Therefore you cannot write HTML piecemeal—write all the HTML, CSS, and possibly Javascript **in one step, in one code block**. The user will help you review it visually.
+If the user submits a filepath, you will also see the image. The filepath and user image will both be in the user's message.
+If you use `plt.show()`, the resulting image will be sent to you. However, if you use `PIL.Image.show()`, the resulting image will NOT be sent to you."""
 ```
 
 ```yaml Profile
-vision: true
-llm.model: "gpt-4-vision-preview" # Any vision supporting model
+loop: True
+
+llm:
+  model: "gpt-4o"
+  temperature: 0
+  supports_vision: True
+  supports_functions: True
+  context_window: 110000
+  max_tokens: 4096
+  custom_instructions: >
+    The user will show you an image of the code you write. You can view images directly.
+    For HTML: This will be run STATELESSLY. You may NEVER write '<!-- previous code here... --!>' or `<!-- header will go here -->` or anything like that. It is CRITICAL TO NEVER WRITE PLACEHOLDERS. Placeholders will BREAK it. You must write the FULL HTML CODE EVERY TIME. Therefore you cannot write HTML piecemeal—write all the HTML, CSS, and possibly Javascript **in one step, in one code block**. The user will help you review it visually.
+    If the user submits a filepath, you will also see the image. The filepath and user image will both be in the user's message.
+    If you use `plt.show()`, the resulting image will be sent to you. However, if you use `PIL.Image.show()`, the resulting image will NOT be sent to you.
 ```
 
 </CodeGroup>
@@ -300,6 +341,18 @@ Get the current installed version number of Open Interpreter.
 
 ```bash Terminal
 interpreter --version
+```
+
+</CodeGroup>
+
+### Open Local Models Directory
+
+Opens the models directory. All downloaded Llamafiles are saved here.
+
+<CodeGroup>
+
+```bash Terminal
+interpreter --local_models
 ```
 
 </CodeGroup>
@@ -340,22 +393,22 @@ interpreter --help
 
 </CodeGroup>
 
-### Force Task Completion
+### Loop (Force Task Completion)
 
 Runs Open Interpreter in a loop, requiring it to admit to completing or failing every task.
 
 <CodeGroup>
 
 ```bash Terminal
-interpreter --force_task_completion
+interpreter --loop
 ```
 
 ```python Python
-interpreter.force_task_completion = True
+interpreter.loop = True
 ```
 
 ```yaml Profile
-force_task_completion: true
+loop: true
 ```
 
 </CodeGroup>
@@ -569,8 +622,6 @@ This property holds a list of `messages` between the user and the interpreter.
 
 You can use it to restore a conversation:
 
-<CodeGroup>
-
 ```python
 interpreter.chat("Hi! Can you print hello world?")
 
@@ -597,6 +648,84 @@ print(interpreter.messages)
 
 #You can use this to restore `interpreter` to a previous conversation.
 interpreter.messages = messages # A list that resembles the one above
+```
+
+### User Message Template
+
+A template applied to the User's message. `{content}` will be replaced with the user's message, then sent to the language model.
+
+<CodeGroup>
+
+````python Python
+interpreter.user_message_template = "{content} Please send me some code that would be able to answer my question, in the form of ```python\n... the code ...\n``` or ```shell\n... the code ...\n```"
+````
+
+```python Profile
+interpreter.user_message_template = "{content}. Be concise, don't include anything unnecessary. Don't use placeholders, I can't edit code."
+```
+
+</CodeGroup>
+
+### Always Apply User Message Template
+
+The boolean flag for whether the User Message Template will be applied to every user message. The default is False which means the template is only applied to the last User message.
+
+<CodeGroup>
+
+```python Python
+interpreter.always_apply_user_message_template = False
+```
+
+```python Profile
+interpreter.always_apply_user_message_template = False
+```
+
+</CodeGroup>
+
+### Code Message Template
+
+A template applied to the Computer's output after running code. `{content}` will be replaced with the computer's output, then sent to the language model.
+
+<CodeGroup>
+
+```python Python
+interpreter.code_output_template = "Code output: {content}\nWhat does this output mean / what's next (if anything, or are we done)?"
+```
+
+```python Profile
+interpreter.code_output_template = "Code output: {content}\nWhat code needs to be run next?"
+```
+
+</CodeGroup>
+
+### Empty Code Message Template
+
+If the computer does not output anything after code execution, this value will be sent to the language model.
+
+<CodeGroup>
+
+```python Python
+interpreter.empty_code_output_template = "The code above was executed on my machine. It produced no text output. what's next (if anything, or are we done?)"
+```
+
+```python Profile
+interpreter.empty_code_output_template = "The code above was executed on my machine. It produced no text output. what's next?"
+```
+
+</CodeGroup>
+
+### Code Output Sender
+
+This field determines whether the computer / code output messages are sent as the assistant or as the user. The default is user.
+
+<CodeGroup>
+
+```python Python
+interpreter.code_output_sender = "user"
+```
+
+```python Profile
+interpreter.code_output_sender = "assistant"
 ```
 
 </CodeGroup>
@@ -656,3 +785,20 @@ computer.emit_images: True
 ```
 
 </CodeGroup>
+
+### Import Computer API
+
+Include the computer API in the system message. The default is False and won't import the computer API automatically
+
+<CodeGroup>
+
+```python Python
+interpreter.computer.import_computer_api = True
+```
+
+```yaml Profile
+computer.import_computer_api: True
+```
+
+</CodeGroup>
+````

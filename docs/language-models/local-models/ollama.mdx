@@ -16,7 +16,7 @@ To run Ollama with Open interpreter:
 ollama run <model-name>
 ```
 
-4. It will likely take a while to download, but once it does, we are ready to use it with Open Interpreter.
+4. It will likely take a while to download, but once it does, we are ready to use it with Open Interpreter. You can either run `interpreter --local` to set it up interactively in the terminal, or do it manually:
 
 <CodeGroup>
 
@@ -37,3 +37,8 @@ interpreter.chat()
 </CodeGroup>
 
 For any future runs with Ollama, ensure that the Ollama server is running. If using the desktop application, you can check to see if the Ollama menu bar item is active.
+
+<Warning>
+  If Ollama is producing strange output, make sure to update to the latest
+  version
+</Warning>

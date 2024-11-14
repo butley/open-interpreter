@@ -17,11 +17,12 @@ for chunk in interpreter.chat("What's 34/24?", stream=True, display=False):
 {"role": "assistant", "type": "code", "format": "python", "content": "24"}
 {"role": "assistant", "type": "code", "format": "python", "end": True}
 
-{"role": "computer", "type": "confirmation", "format": "execution", "content": {"type": "code", "language": "python", "code": "34 / 24"}}
+{"role": "computer", "type": "confirmation", "format": "execution", "content": {"type": "code", "format": "python", "content": "34 / 24"}},
 
 {"role": "computer", "type": "console", "start": True}
 {"role": "computer", "type": "console", "format": "active_line", "content": "1"}
 {"role": "computer", "type": "console", "format": "output", "content": "1.4166666666666667\n"}
+{"role": "computer", "type": "console", "format": "active_line", "content": None},
 {"role": "computer", "type": "console", "end": True}
 
 {"role": "assistant", "type": "message", "start": True}
@@ -60,7 +61,7 @@ In this example, the LLM decided to start writing code first. It could have deci
 
 Every streamed chunk of type "code" has a format key that specifies the language. In this case it decided to write `python`.
 
-This can be any language defined in [our languages directory.](https://github.com/KillianLucas/open-interpreter/tree/main/interpreter/core/computer/terminal/languages)
+This can be any language defined in [our languages directory.](https://github.com/OpenInterpreter/open-interpreter/tree/main/interpreter/core/computer/terminal/languages)
 
 ```
 
@@ -110,7 +111,7 @@ for chunk in interpreter.chat("What's 34/24?", stream=True):
             break
 ```
 
-**While** the code is being executed, you'll recieve the line of code that's being run:
+**While** the code is being executed, you'll receive the line of code that's being run:
 
 ```
 {"role": "computer", "type": "console", "format": "active_line", "content": "1"}
@@ -118,7 +119,7 @@ for chunk in interpreter.chat("What's 34/24?", stream=True):
 
 We use this to highlight the active line of code on our UI, which keeps the user aware of what Open Interpreter is doing.
 
-You'll then recieve its output, if it produces any:
+You'll then receive its output, if it produces any:
 
 ```
 {"role": "computer", "type": "console", "format": "output", "content": "1.4166666666666667\n"}
@@ -155,4 +156,4 @@ Finally, the LLM decided to write a message. This is streamed token-by-token as 
 {"role": "assistant", "type": "message", "end": True}
 ```
 
-For an example in JavaScript on how you might process these streamed chunks, see the [migration guide](https://github.com/KillianLucas/open-interpreter/blob/main/docs/NCU_MIGRATION_GUIDE.md)
+For an example in JavaScript on how you might process these streamed chunks, see the [migration guide](https://github.com/OpenInterpreter/open-interpreter/blob/main/docs/NCU_MIGRATION_GUIDE.md)
